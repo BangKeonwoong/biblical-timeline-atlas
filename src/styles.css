@@ -55,6 +55,22 @@ body {
   line-height: 1.6;
 }
 
+body,
+#root,
+.page-shell,
+.main-grid > *,
+.timeline-column,
+.era-section,
+.event-list,
+.event-card,
+.event-card-header > div,
+.detail-node-button,
+.detail-node-copy,
+.hero-copy,
+.hero-panel {
+  min-width: 0;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -74,6 +90,7 @@ button {
   padding: 2rem clamp(1.2rem, 3vw, 4rem) 6rem;
   max-width: 1600px;
   margin: 0 auto;
+  overflow-x: clip;
 }
 
 /* Ambient Background Layer for Glassmorphism Context */
@@ -185,6 +202,18 @@ button {
   font-size: clamp(1.1rem, 1.8vw, 1.3rem);
   line-height: 1.8;
   font-weight: 300;
+}
+
+.hero-summary,
+.event-summary,
+.detail-summary,
+.detail-section p,
+.detail-node-copy small,
+.panel-block p,
+.panel-block li,
+.book-card p,
+.controversy-card p {
+  overflow-wrap: anywhere;
 }
 
 .hero-actions {
@@ -1003,7 +1032,10 @@ button {
 
 @media (max-width: 760px) {
   .page-shell {
-    padding: 1rem 1rem 4rem;
+    padding-top: 1rem;
+    padding-bottom: 4rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
   }
   .hero h1 {
     font-size: clamp(2.5rem, 10vw, 3.5rem);
@@ -1035,15 +1067,22 @@ button {
   .covenant-stop:hover::before {
     transform: translate(-50%, -50%) scale(1.2);
   }
+  .main-grid {
+    gap: 2rem;
+  }
+  .event-list {
+    padding-left: 0;
+  }
   .event-list::before {
-    left: 1.5rem;
+    display: none;
   }
   .event-card {
-    margin-left: 1.5rem;
+    margin-left: 0;
     padding: 1.2rem;
+    overflow: hidden;
   }
   .event-card::before {
-    left: -2.3rem;
+    display: none;
   }
   .event-inline-dossier .detail-scripture-stack {
     margin-top: 1.2rem;
@@ -1075,6 +1114,14 @@ button {
   }
   .detail-node-dossier {
     padding: 0.9rem 0.75rem 0;
+  }
+  .detail-node-button,
+  .scripture-block,
+  .book-card,
+  .controversy-card,
+  .hero-panel,
+  .sticky-card {
+    overflow: hidden;
   }
 }
 
