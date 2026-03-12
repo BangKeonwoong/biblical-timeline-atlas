@@ -24,6 +24,11 @@ function App() {
   );
   const [activeId, setActiveId] = useState<string>(data.anchorEvents[0]?.id ?? "");
   const [selectedId, setSelectedId] = useState<string>(data.anchorEvents[0]?.id ?? "");
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-event-id]"));
@@ -103,6 +108,13 @@ function App() {
             <a className="button-secondary" href={`#${selectedEvent.id}`}>
               현재 사건 보기
             </a>
+            <button 
+              className="button-secondary" 
+              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+              aria-label="테마 변경"
+            >
+              {theme === 'dark' ? '라이트 모드 ☀️' : '다크 모드 🌙'}
+            </button>
           </div>
         </div>
 

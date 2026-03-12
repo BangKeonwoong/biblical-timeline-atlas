@@ -39,11 +39,13 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
   background-color: var(--bg-deep);
   background-image: 
     radial-gradient(circle at 15% 0%, rgba(212, 175, 55, 0.08), transparent 45%),
@@ -69,7 +71,6 @@ button {
 /* Base Layout Container */
 .page-shell {
   position: relative;
-  overflow: hidden;
   padding: 2rem clamp(1.2rem, 3vw, 4rem) 6rem;
   max-width: 1600px;
   margin: 0 auto;
@@ -376,7 +377,6 @@ button {
   display: grid;
   grid-template-columns: 16rem 1fr 22rem;
   gap: 3rem;
-  align-items: start;
 }
 
 /* Era Rail / Sidebar Navigation */
@@ -916,4 +916,117 @@ button {
   .certainty {
     align-self: flex-start;
   }
+}
+
+/* Light Theme Overrides */
+:root[data-theme="light"] {
+  --bg-deep: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-dark: #334155;
+  
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-active: rgba(212, 175, 55, 0.5);
+  
+  --shadow-glass: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 24px rgba(212, 175, 55, 0.15);
+}
+
+[data-theme="light"] body {
+  background-image: 
+    radial-gradient(circle at 15% 0%, rgba(212, 175, 55, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(225, 29, 72, 0.08), transparent 50%),
+    radial-gradient(circle at 50% 50%, #ffffff, var(--bg-deep));
+}
+
+[data-theme="light"] .hero h1 {
+  color: #0f172a;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+[data-theme="light"] .grid-fade {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
+
+[data-theme="light"] .button-secondary {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-main);
+}
+[data-theme="light"] .button-secondary:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .hero-panel,
+[data-theme="light"] .sticky-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.95));
+  border-top: 1px solid rgba(255,255,255,0.8);
+  border-left: 1px solid rgba(255,255,255,0.6);
+}
+
+[data-theme="light"] .covenant-track::before {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.1) 80%, transparent);
+}
+
+[data-theme="light"] .covenant-stop::before {
+  background: #fff;
+  border-color: var(--accent-gold);
+}
+
+[data-theme="light"] .era-id {
+  background: rgba(255,255,255,0.8);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+[data-theme="light"] .event-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.9));
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+[data-theme="light"] .event-card:hover {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 1));
+  box-shadow: 0 12px 40px rgba(0,0,0,0.08), 0 0 20px rgba(212, 175, 55, 0.1);
+  border-color: rgba(0,0,0,0.1);
+}
+
+[data-theme="light"] .event-card::before {
+  background: #fff;
+}
+
+[data-theme="light"] .event-card.is-active {
+  background: #ffffff;
+}
+
+[data-theme="light"] .term-chip,
+[data-theme="light"] .book-tag {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0,0,0,0.05);
+}
+
+[data-theme="light"] .term-chip:hover,
+[data-theme="light"] .book-tag:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .scripture-block {
+  background: rgba(0,0,0,0.03);
+}
+
+[data-theme="light"] .rail-link:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .covenant-band {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent);
+}
+
+[data-theme="light"] .book-card,
+[data-theme="light"] .controversy-card {
+  border-top: 1px solid rgba(0,0,0,0.05);
 }
