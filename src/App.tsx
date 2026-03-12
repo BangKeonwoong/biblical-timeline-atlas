@@ -17,6 +17,78 @@ function formatPassageList(items: string[]) {
   return items.length ? items.join(" · ") : "해당 본문 없음";
 }
 
+function EventDossier({
+  event,
+  eraName,
+  compact = false,
+}: {
+  event: AnchorEvent;
+  eraName: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "event-dossier event-dossier-compact" : "event-dossier"}>
+      <div className="detail-section">
+        <span className="detail-label">사건 좌표</span>
+        <p>
+          {event.id} · {eraName} · {event.dateLabel}
+        </p>
+      </div>
+      <div className="detail-section">
+        <span className="detail-label">주본문</span>
+        <p>{formatPassageList(event.mainPassages)}</p>
+      </div>
+      <div className="detail-section">
+        <span className="detail-label">핵심 근거 말씀</span>
+        <p>{formatPassageList(event.keyPassages)}</p>
+      </div>
+      <div className="detail-section">
+        <span className="detail-label">성취 · 해석 본문</span>
+        <p>{formatPassageList(event.fulfillmentPassages)}</p>
+      </div>
+      <div className="detail-section">
+        <span className="detail-label">구속사 의미</span>
+        <p>{event.significance}</p>
+      </div>
+      <div className="detail-section">
+        <span className="detail-label">원어 핵심어</span>
+        <ul className="term-list">
+          {event.originalTerms.map((term) => (
+            <li key={`${event.id}-${term.lemma}-detail`}>
+              <strong>{term.lemma}</strong> {term.transliteration} · {term.glossKo}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {event.focusPassages.length > 0 ? (
+        <div className="detail-scripture-stack">
+          {event.focusPassages.map((passage, index) => (
+            <details
+              key={`${event.id}-${passage.translation}-${passage.reference}`}
+              className="scripture-block"
+              open={index === 0}
+            >
+              <summary>
+                <span>{passage.translation}</span>
+                <strong>{passage.reference}</strong>
+              </summary>
+              <div className="verse-block">
+                {passage.verses.map((line) => (
+                  <p key={`${passage.reference}-${line.verse}`}>
+                    <span className="verse-num">{line.verse}</span>
+                    {line.text}
+                  </p>
+                ))}
+              </div>
+            </details>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function App() {
   const sections = useMemo(
     () => splitAnchorEvents(data.anchorEvents, data.eras),
@@ -24,6 +96,7 @@ function App() {
   );
   const [activeId, setActiveId] = useState<string>(data.anchorEvents[0]?.id ?? "");
   const [selectedId, setSelectedId] = useState<string>(data.anchorEvents[0]?.id ?? "");
+  const [mobileOpenId, setMobileOpenId] = useState<string | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
@@ -64,6 +137,7 @@ function App() {
       if (event) {
         setSelectedId(event.id);
         setActiveId(event.id);
+        setMobileOpenId(event.id);
         document.getElementById(event.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
       } else if (era) {
         document.getElementById(era.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -193,6 +267,8 @@ function App() {
                 {events.map((event) => {
                   const isActive = event.id === activeId;
                   const isSelected = event.id === selectedId;
+                  const isMobileOpen = event.id === mobileOpenId;
+                  const eraName = eraById.get(event.eraId)?.name ?? event.eraId;
 
                   return (
                     <article
@@ -232,12 +308,20 @@ function App() {
                           onClick={(clickEvent) => {
                             clickEvent.stopPropagation();
                             setSelectedId(event.id);
+                            setMobileOpenId((current) => (current === event.id ? null : event.id));
                             window.location.hash = event.id;
                           }}
+                          aria-expanded={isMobileOpen}
                         >
-                          본문과 주석 열기
+                          {isMobileOpen ? "본문과 주석 닫기" : "본문과 주석 열기"}
                         </button>
                       </div>
+
+                      {isMobileOpen ? (
+                        <div className="event-inline-dossier">
+                          <EventDossier event={event} eraName={eraName} compact />
+                        </div>
+                      ) : null}
                     </article>
                   );
                 })}
@@ -254,48 +338,10 @@ function App() {
               {selectedEvent.id} · {eraById.get(selectedEvent.eraId)?.name}
             </p>
             <p className="detail-summary">{selectedEvent.significance}</p>
-
-            <div className="detail-section">
-              <span className="detail-label">주본문</span>
-              <p>{formatPassageList(selectedEvent.mainPassages)}</p>
-            </div>
-            <div className="detail-section">
-              <span className="detail-label">핵심 근거 말씀</span>
-              <p>{formatPassageList(selectedEvent.keyPassages)}</p>
-            </div>
-            <div className="detail-section">
-              <span className="detail-label">성취 · 해석 본문</span>
-              <p>{formatPassageList(selectedEvent.fulfillmentPassages)}</p>
-            </div>
-            <div className="detail-section">
-              <span className="detail-label">원어 핵심어</span>
-              <ul className="term-list">
-                {selectedEvent.originalTerms.map((term) => (
-                  <li key={`${selectedEvent.id}-${term.lemma}-detail`}>
-                    <strong>{term.lemma}</strong> {term.transliteration} · {term.glossKo}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="detail-scripture-stack">
-              {selectedEvent.focusPassages.map((passage) => (
-                <article key={`${selectedEvent.id}-${passage.translation}-${passage.reference}`} className="scripture-block">
-                  <header>
-                    <span>{passage.translation}</span>
-                    <strong>{passage.reference}</strong>
-                  </header>
-                  <div className="verse-block">
-                    {passage.verses.map((line) => (
-                      <p key={`${passage.reference}-${line.verse}`}>
-                        <span className="verse-num">{line.verse}</span>
-                        {line.text}
-                      </p>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
+            <EventDossier
+              event={selectedEvent}
+              eraName={eraById.get(selectedEvent.eraId)?.name ?? selectedEvent.eraId}
+            />
           </div>
         </aside>
       </main>

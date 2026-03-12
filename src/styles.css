@@ -656,6 +656,10 @@ button {
   border-top: 1px solid rgba(255,255,255,0.05);
 }
 
+.event-inline-dossier {
+  display: none;
+}
+
 .inline-link {
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -678,6 +682,12 @@ button {
 /* Detail Panel Sidebar */
 .detail-card {
   border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.event-dossier-compact {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .detail-card h2 {
@@ -708,16 +718,25 @@ button {
   border-radius: 0.5rem 1rem 1rem 0.5rem;
 }
 
-.scripture-block header {
+.scripture-block summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
   color: var(--text-muted);
   font-size: 0.9rem;
+  list-style: none;
+  cursor: pointer;
 }
 
-.scripture-block header strong {
+.scripture-block summary::-webkit-details-marker {
+  display: none;
+}
+
+.scripture-block[open] summary {
+  margin-bottom: 1rem;
+}
+
+.scripture-block summary strong {
   color: var(--accent-gold);
 }
 
@@ -857,8 +876,10 @@ button {
     gap: 0.2rem;
   }
   .detail-panel {
-    order: 3;
-    margin-top: 2rem;
+    display: none;
+  }
+  .event-inline-dossier {
+    display: block;
   }
   .controversy-list {
     grid-template-columns: 1fr;
@@ -908,6 +929,9 @@ button {
   }
   .event-card::before {
     left: -2.3rem;
+  }
+  .event-inline-dossier .detail-scripture-stack {
+    margin-top: 1.2rem;
   }
   .event-card-header {
     flex-direction: column;
