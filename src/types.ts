@@ -46,12 +46,13 @@ export interface BookPlacement {
   note: string;
 }
 
-export interface AnchorEvent {
+export interface TimelineEventBase {
   id: string;
+  kind: "anchor" | "detail";
   eraId: string;
   order: number;
   titleKo: string;
-  titleEn: string;
+  titleEn?: string;
   dateLabel: string;
   rangeLabel: string;
   summary: string;
@@ -65,12 +66,27 @@ export interface AnchorEvent {
   controversyIds: string[];
 }
 
+export interface AnchorEvent extends TimelineEventBase {
+  kind: "anchor";
+  detailCount: number;
+}
+
+export interface DetailEvent extends TimelineEventBase {
+  kind: "detail";
+  parentAnchorId: string;
+  parentAnchorTitleKo: string;
+  detailOrder: number;
+}
+
+export type TimelineEvent = AnchorEvent | DetailEvent;
+
 export interface SiteData {
   generatedAt: string;
   thesis: string;
   method: string[];
   eras: Era[];
   anchorEvents: AnchorEvent[];
+  detailEvents: DetailEvent[];
   bookPlacements: BookPlacement[];
   controversies: ControversyEntry[];
 }

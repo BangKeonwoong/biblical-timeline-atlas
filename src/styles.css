@@ -565,6 +565,10 @@ button {
   box-shadow: var(--shadow-glass), var(--shadow-glow);
 }
 
+.event-card.is-context {
+  border-color: rgba(212, 175, 55, 0.22);
+}
+
 .event-card.is-active::before {
   background: var(--accent-gold);
   box-shadow: 0 0 15px var(--accent-gold);
@@ -576,6 +580,12 @@ button {
   gap: 1.5rem;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.event-card-markers {
+  display: grid;
+  gap: 0.7rem;
+  justify-items: end;
 }
 
 .event-card h3 {
@@ -648,6 +658,102 @@ button {
   color: var(--text-main);
 }
 
+.detail-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: var(--accent-gold);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detail-node-list {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.4rem;
+}
+
+.detail-node-item {
+  border-radius: 1rem;
+}
+
+.detail-node-button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.detail-node-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(212, 175, 55, 0.16);
+  transform: translateX(3px);
+}
+
+.detail-node-button.is-selected {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.05);
+}
+
+.detail-node-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  margin-top: 0.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: var(--accent-gold);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.detail-node-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.detail-node-copy strong {
+  color: var(--text-main);
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.detail-node-copy span {
+  color: var(--accent-gold);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+.detail-node-copy small {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.detail-node-dossier {
+  margin-top: 0.85rem;
+  padding: 1rem 1rem 0;
+  border-left: 1px solid rgba(212, 175, 55, 0.18);
+}
+
 .event-footer {
   display: flex;
   justify-content: flex-end;
@@ -693,6 +799,12 @@ button {
 .detail-card h2 {
   font-size: 1.6rem;
   margin-bottom: 0.5rem;
+}
+
+.detail-parent {
+  margin: 0.5rem 0 0;
+  color: var(--accent-gold);
+  font-size: 0.95rem;
 }
 
 .detail-summary {
@@ -881,6 +993,9 @@ button {
   .event-inline-dossier {
     display: block;
   }
+  .detail-node-dossier .detail-scripture-stack {
+    margin-top: 1.2rem;
+  }
   .controversy-list {
     grid-template-columns: 1fr;
   }
@@ -937,8 +1052,29 @@ button {
     flex-direction: column;
     gap: 0.8rem;
   }
+  .event-card-markers {
+    justify-items: start;
+  }
   .certainty {
     align-self: flex-start;
+  }
+  .detail-node-button {
+    gap: 0.85rem;
+    padding: 0.9rem;
+  }
+  .detail-node-index {
+    min-width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+  }
+  .detail-node-copy strong {
+    font-size: 0.94rem;
+  }
+  .detail-node-copy small {
+    font-size: 0.82rem;
+  }
+  .detail-node-dossier {
+    padding: 0.9rem 0.75rem 0;
   }
 }
 

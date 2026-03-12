@@ -7,6 +7,7 @@ import {
   eras,
   sourcePaths,
 } from "./source/anchor-events.mjs";
+import { rawDetailGroups } from "./source/detail-events.mjs";
 
 const outputPath = path.resolve("src/data/generated/site-data.json");
 const chapterCache = new Map();
@@ -161,20 +162,74 @@ async function extractPassage(ref, maps) {
   };
 }
 
+async function buildFocusPassages(refs = [], maps) {
+  const focusPassages = [];
+
+  for (const ref of refs) {
+    focusPassages.push(await extractPassage(ref, maps));
+  }
+
+  return focusPassages;
+}
+
 async function buildAnchorEvents(maps) {
   const results = [];
 
   for (const [index, event] of rawAnchorEvents.entries()) {
-    const focusPassages = [];
-    for (const ref of event.focusRefs) {
-      focusPassages.push(await extractPassage(ref, maps));
+    const detailGroup = rawDetailGroups[event.id];
+    if (!detailGroup?.length) {
+      throw new Error(`Detail group missing for ${event.id}`);
     }
 
     results.push({
       ...event,
+      kind: "anchor",
       order: index + 1,
-      focusPassages,
+      detailCount: detailGroup.length,
+      focusPassages: await buildFocusPassages(event.focusRefs, maps),
     });
+  }
+
+  return results;
+}
+
+async function buildDetailEvents(anchorEvents, maps) {
+  const results = [];
+
+  for (const anchor of anchorEvents) {
+    const detailGroup = rawDetailGroups[anchor.id];
+    if (!detailGroup?.length) {
+      throw new Error(`Detail group missing for ${anchor.id}`);
+    }
+
+    for (const [index, detail] of detailGroup.entries()) {
+      results.push({
+        id: `DT-${anchor.id.slice(3)}-${String(index + 1).padStart(2, "0")}`,
+        kind: "detail",
+        eraId: anchor.eraId,
+        order: results.length + 1,
+        titleKo: detail.titleKo,
+        titleEn: detail.titleEn,
+        dateLabel: anchor.dateLabel,
+        rangeLabel: detail.rangeLabel,
+        summary: detail.summary,
+        significance: detail.significance,
+        certainty: detail.certainty ?? anchor.certainty,
+        mainPassages: detail.mainPassages,
+        keyPassages: detail.keyPassages,
+        fulfillmentPassages: detail.fulfillmentPassages ?? [],
+        focusPassages: await buildFocusPassages(detail.focusRefs, maps),
+        originalTerms: detail.originalTerms ?? [],
+        controversyIds: detail.controversyIds ?? [],
+        parentAnchorId: anchor.id,
+        parentAnchorTitleKo: anchor.titleKo,
+        detailOrder: index + 1,
+      });
+    }
+  }
+
+  if (results.length !== 170) {
+    throw new Error(`Expected 170 detail events, received ${results.length}`);
   }
 
   return results;
@@ -183,6 +238,7 @@ async function buildAnchorEvents(maps) {
 async function main() {
   const maps = await buildBookMaps();
   const anchorEvents = await buildAnchorEvents(maps);
+  const detailEvents = await buildDetailEvents(anchorEvents, maps);
 
   const payload = {
     generatedAt: new Date().toISOString(),
@@ -195,6 +251,7 @@ async function main() {
     ],
     eras,
     anchorEvents,
+    detailEvents,
     bookPlacements,
     controversies,
   };

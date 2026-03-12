@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import type { AnchorEvent, Era, SiteData } from "./types";
+import type { AnchorEvent, DetailEvent, Era, SiteData, TimelineEvent } from "./types";
 import siteData from "./data/generated/site-data.json";
 
 const data = siteData as SiteData;
 
 const eraById = new Map(data.eras.map((era) => [era.id, era]));
+const anchorById = new Map(data.anchorEvents.map((event) => [event.id, event]));
+const allEvents: TimelineEvent[] = [...data.anchorEvents, ...data.detailEvents];
+const eventById = new Map(allEvents.map((event) => [event.id, event]));
+const detailEventsByAnchor = data.detailEvents.reduce((map, detail) => {
+  const items = map.get(detail.parentAnchorId) ?? [];
+  items.push(detail);
+  map.set(detail.parentAnchorId, items);
+  return map;
+}, new Map<string, DetailEvent[]>());
 
 function splitAnchorEvents(events: AnchorEvent[], eras: Era[]) {
   return eras.map((era) => ({
@@ -17,12 +26,20 @@ function formatPassageList(items: string[]) {
   return items.length ? items.join(" · ") : "해당 본문 없음";
 }
 
+function classNames(...items: Array<string | false | null | undefined>) {
+  return items.filter(Boolean).join(" ");
+}
+
+function getAnchorContext(event: TimelineEvent) {
+  return event.kind === "detail" ? anchorById.get(event.parentAnchorId) ?? data.anchorEvents[0] : event;
+}
+
 function EventDossier({
   event,
   eraName,
   compact = false,
 }: {
-  event: AnchorEvent;
+  event: TimelineEvent;
   eraName: string;
   compact?: boolean;
 }) {
@@ -31,8 +48,23 @@ function EventDossier({
       <div className="detail-section">
         <span className="detail-label">사건 좌표</span>
         <p>
-          {event.id} · {eraName} · {event.dateLabel}
+          {event.id} · {event.kind === "detail" ? "세부사건" : "앵커사건"} · {eraName} ·{" "}
+          {event.dateLabel}
         </p>
+      </div>
+
+      {event.kind === "detail" ? (
+        <div className="detail-section">
+          <span className="detail-label">상위 앵커</span>
+          <p>
+            {event.parentAnchorId} · {event.parentAnchorTitleKo}
+          </p>
+        </div>
+      ) : null}
+
+      <div className="detail-section">
+        <span className="detail-label">사건 개요</span>
+        <p>{event.summary}</p>
       </div>
       <div className="detail-section">
         <span className="detail-label">주본문</span>
@@ -50,16 +82,19 @@ function EventDossier({
         <span className="detail-label">구속사 의미</span>
         <p>{event.significance}</p>
       </div>
-      <div className="detail-section">
-        <span className="detail-label">원어 핵심어</span>
-        <ul className="term-list">
-          {event.originalTerms.map((term) => (
-            <li key={`${event.id}-${term.lemma}-detail`}>
-              <strong>{term.lemma}</strong> {term.transliteration} · {term.glossKo}
-            </li>
-          ))}
-        </ul>
-      </div>
+
+      {event.originalTerms.length > 0 ? (
+        <div className="detail-section">
+          <span className="detail-label">원어 핵심어</span>
+          <ul className="term-list">
+            {event.originalTerms.map((term) => (
+              <li key={`${event.id}-${term.lemma}-detail`}>
+                <strong>{term.lemma}</strong> {term.transliteration} · {term.glossKo}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {event.focusPassages.length > 0 ? (
         <div className="detail-scripture-stack">
@@ -90,17 +125,14 @@ function EventDossier({
 }
 
 function App() {
-  const sections = useMemo(
-    () => splitAnchorEvents(data.anchorEvents, data.eras),
-    [],
-  );
+  const sections = useMemo(() => splitAnchorEvents(data.anchorEvents, data.eras), []);
   const [activeId, setActiveId] = useState<string>(data.anchorEvents[0]?.id ?? "");
   const [selectedId, setSelectedId] = useState<string>(data.anchorEvents[0]?.id ?? "");
   const [mobileOpenId, setMobileOpenId] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
   useEffect(() => {
@@ -130,16 +162,21 @@ function App() {
       const { hash } = window.location;
       if (!hash) return;
 
-      const target = hash.replace(/^#/, "").toUpperCase();
-      const event = data.anchorEvents.find((item) => item.id === target);
+      const target = decodeURIComponent(hash.replace(/^#/, "")).toUpperCase();
+      const event = eventById.get(target);
       const era = data.eras.find((item) => item.id === target);
 
       if (event) {
+        const anchor = getAnchorContext(event);
         setSelectedId(event.id);
-        setActiveId(event.id);
+        setActiveId(anchor.id);
         setMobileOpenId(event.id);
         document.getElementById(event.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
       } else if (era) {
+        const firstEvent = data.anchorEvents.find((item) => item.eraId === era.id);
+        if (firstEvent) {
+          setActiveId(firstEvent.id);
+        }
         document.getElementById(era.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     };
@@ -153,11 +190,10 @@ function App() {
     };
   }, []);
 
-  const selectedEvent =
-    data.anchorEvents.find((event) => event.id === selectedId) ?? data.anchorEvents[0];
-  const activeEvent =
-    data.anchorEvents.find((event) => event.id === activeId) ?? data.anchorEvents[0];
-  const activeEra = eraById.get(activeEvent?.eraId ?? data.eras[0].id) ?? data.eras[0];
+  const selectedEvent = eventById.get(selectedId) ?? data.anchorEvents[0];
+  const activeAnchor = anchorById.get(activeId) ?? data.anchorEvents[0];
+  const activeEra = eraById.get(activeAnchor.eraId ?? data.eras[0].id) ?? data.eras[0];
+  const selectedEraName = eraById.get(selectedEvent.eraId)?.name ?? selectedEvent.eraId;
 
   return (
     <div className="page-shell">
@@ -172,8 +208,8 @@ function App() {
           <p className="eyebrow">Biblical Timeline Archive</p>
           <h1>언약의 축을 따라 내려가는 성경 타임라인</h1>
           <p className="hero-summary">
-            창조에서 새 창조까지, 16개 대시대와 40개 앵커 사건을 인포그래픽과 본문
-            층위로 재배열한 학습용 아카이브입니다.
+            창조에서 새 창조까지, 16개 대시대와 40개 앵커 사건, 170개 세부사건을
+            인포그래픽과 본문 층위로 재배열한 학습용 아카이브입니다.
           </p>
           <div className="hero-actions">
             <a className="button-primary" href="#timeline">
@@ -182,12 +218,13 @@ function App() {
             <a className="button-secondary" href={`#${selectedEvent.id}`}>
               현재 사건 보기
             </a>
-            <button 
-              className="button-secondary" 
-              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => setTheme((value) => (value === "dark" ? "light" : "dark"))}
               aria-label="테마 변경"
             >
-              {theme === 'dark' ? '라이트 모드 ☀️' : '다크 모드 🌙'}
+              {theme === "dark" ? "라이트 모드" : "다크 모드"}
             </button>
           </div>
         </div>
@@ -268,14 +305,21 @@ function App() {
                   const isActive = event.id === activeId;
                   const isSelected = event.id === selectedId;
                   const isMobileOpen = event.id === mobileOpenId;
+                  const containsSelectedDetail =
+                    selectedEvent.kind === "detail" && selectedEvent.parentAnchorId === event.id;
                   const eraName = eraById.get(event.eraId)?.name ?? event.eraId;
+                  const detailItems = detailEventsByAnchor.get(event.id) ?? [];
 
                   return (
                     <article
                       key={event.id}
                       id={event.id}
                       data-event-id={event.id}
-                      className={isActive ? "event-card is-active" : "event-card"}
+                      className={classNames(
+                        "event-card",
+                        isActive && "is-active",
+                        (isSelected || containsSelectedDetail) && "is-context",
+                      )}
                       onClick={() => setSelectedId(event.id)}
                     >
                       <div className="event-card-header">
@@ -285,20 +329,75 @@ function App() {
                           </p>
                           <h3>{event.titleKo}</h3>
                         </div>
-                        <span className={`certainty certainty-${event.certainty.toLowerCase()}`}>
-                          {event.certainty}
-                        </span>
+                        <div className="event-card-markers">
+                          <span className="detail-count">{event.detailCount}개 세부사건</span>
+                          <span className={`certainty certainty-${event.certainty.toLowerCase()}`}>
+                            {event.certainty}
+                          </span>
+                        </div>
                       </div>
 
                       <p className="event-range">{event.rangeLabel}</p>
                       <p className="event-summary">{event.summary}</p>
 
-                      <div className="tag-row">
-                        {event.originalTerms.map((term) => (
-                          <span key={`${event.id}-${term.lemma}`} className="term-chip">
-                            {term.lemma} · {term.glossKo}
-                          </span>
-                        ))}
+                      {event.originalTerms.length > 0 ? (
+                        <div className="tag-row">
+                          {event.originalTerms.map((term) => (
+                            <span key={`${event.id}-${term.lemma}`} className="term-chip">
+                              {term.lemma} · {term.glossKo}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="detail-node-list" aria-label={`${event.titleKo} 세부사건 목록`}>
+                        {detailItems.map((detail) => {
+                          const isDetailSelected = detail.id === selectedId;
+                          const isDetailOpen = detail.id === mobileOpenId;
+
+                          return (
+                            <div
+                              key={detail.id}
+                              id={detail.id}
+                              className={classNames(
+                                "detail-node-item",
+                                isDetailSelected && "is-selected",
+                              )}
+                            >
+                              <button
+                                type="button"
+                                className={classNames(
+                                  "detail-node-button",
+                                  isDetailSelected && "is-selected",
+                                )}
+                                onClick={(clickEvent) => {
+                                  clickEvent.stopPropagation();
+                                  setSelectedId(detail.id);
+                                  setMobileOpenId((current) =>
+                                    current === detail.id ? null : detail.id,
+                                  );
+                                  window.location.hash = detail.id;
+                                }}
+                                aria-expanded={isDetailOpen}
+                              >
+                                <span className="detail-node-index">
+                                  {String(detail.detailOrder).padStart(2, "0")}
+                                </span>
+                                <span className="detail-node-copy">
+                                  <strong>{detail.titleKo}</strong>
+                                  <span>{detail.rangeLabel}</span>
+                                  <small>{detail.summary}</small>
+                                </span>
+                              </button>
+
+                              {isDetailOpen ? (
+                                <div className="detail-node-dossier">
+                                  <EventDossier event={detail} eraName={eraName} compact />
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <div className="event-footer">
@@ -313,7 +412,7 @@ function App() {
                           }}
                           aria-expanded={isMobileOpen}
                         >
-                          {isMobileOpen ? "본문과 주석 닫기" : "본문과 주석 열기"}
+                          {isMobileOpen ? "앵커 도시에르 닫기" : "앵커 도시에르 열기"}
                         </button>
                       </div>
 
@@ -335,13 +434,15 @@ function App() {
             <p className="eyebrow">Event Dossier</p>
             <h2>{selectedEvent.titleKo}</h2>
             <p className="detail-meta">
-              {selectedEvent.id} · {eraById.get(selectedEvent.eraId)?.name}
+              {selectedEvent.id}
+              {selectedEvent.kind === "detail" ? ` · ${selectedEvent.parentAnchorId}` : ""} ·{" "}
+              {selectedEraName}
             </p>
+            {selectedEvent.kind === "detail" ? (
+              <p className="detail-parent">{selectedEvent.parentAnchorTitleKo}</p>
+            ) : null}
             <p className="detail-summary">{selectedEvent.significance}</p>
-            <EventDossier
-              event={selectedEvent}
-              eraName={eraById.get(selectedEvent.eraId)?.name ?? selectedEvent.eraId}
-            />
+            <EventDossier event={selectedEvent} eraName={selectedEraName} />
           </div>
         </aside>
       </main>
